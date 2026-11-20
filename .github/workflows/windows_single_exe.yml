@@ -32,7 +32,7 @@ jobs:
           $out = "build\windows\x64\runner\Release"
           $gh = "https://" + "github.com"
           7z a -mx=5 app.7z "$out\*"
-          Invoke-WebRequest -Uri "$gh/chrislake/7zsfx/releases/download/1.7.0.3900/7zSD_All_x64.sfx" -OutFile "7zSD.sfx"
+          Copy-Item "C:\Program Files\7-Zip\7z.sfx" "7zSD.sfx"
           Invoke-WebRequest -Uri "$gh/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe" -OutFile "rcedit.exe"
           .\rcedit.exe "7zSD.sfx" --set-icon "windows\runner\resources\app_icon.ico"
           $cfg = ';!@Install@!UTF-8!' + "`r`n" + 'RunProgram="zen_temple.exe"' + "`r`n" + 'GUIMode="2"' + "`r`n" + ';!@InstallEnd@!' + "`r`n"
