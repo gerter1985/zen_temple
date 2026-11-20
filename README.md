@@ -1,17 +1,17 @@
-# zen_temple
+# Дзен Храм (Zen Temple)
 
-A new Flutter project.
+Бібліотека, аудіокниги, подкасти та YouTube-лекції в одному застосунку.
 
-## Getting Started
+## Встановлення
 
-This project is a starting point for a Flutter application.
+### Windows (10 / 11)
+1. Перейдіть у розділ **[Releases](../../releases/latest)** праворуч.
+2. Завантажте **`ZenTemple_Setup.exe`** та запустіть встановлення.
+3. Усі необхідні компоненти (`mpv`, `yt-dlp`, бібліотеки C++) уже вшиті в інсталятор.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Linux (Ubuntu / Debian / Linux Mint)
+1. Завантажте **`ZenTemple_Linux_amd64.deb`** із розділу **[Releases](../../releases/latest)**.
+2. Встановіть командою в терміналі:
+   ```bash
+   sudo apt install ./ZenTemple_Linux_amd64.deb
+   ```

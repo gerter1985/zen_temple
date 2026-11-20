@@ -68,3 +68,29 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: ZenTemple v1.0.${{ github.run_number }}
           files: ZenTemple_Setup.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Install Linux dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libmpv-dev mpv
+      - name: Build Linux Release
+        run: flutter build linux --release
+      - name: Package .deb installer
+        run: |
+          mkdir -p pkg/usr/local/bin/zen_temple_app pkg/usr/share/applications pkg/DEBIAN
+          cp -r build/linux/x64/release/bundle/* pkg/usr/local/bin/zen_temple_app/
+          printf '#!/bin/sh\nexec /usr/local/bin/zen_temple_app/zen_temple "$@"\n' > pkg/usr/local/bin/zen_temple
+          chmod +x pkg/usr/local/bin/zen_temple
+          printf '[Desktop Entry]\nName=ZenTemple\nExec=/usr/local/bin/zen_temple\nType=Application\nCategories=AudioVideo;Education;\n' > pkg/usr/share/applications/zentemple.desktop
+          printf 'Package: zentemple\nVersion: 1.0.0\nSection: utils\nPriority: optional\nArchitecture: amd64\nDepends: mpv, yt-dlp, libgtk-3-0\nMaintainer: gerter1985\nDescription: Zen Temple Library and Media Player\n' > pkg/DEBIAN/control
+          dpkg-deb --build pkg ZenTemple_Linux_amd64.deb
+      - name: Upload Linux .deb to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          files: ZenTemple_Linux_amd64.deb
