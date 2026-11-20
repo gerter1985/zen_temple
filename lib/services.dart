@@ -5,7 +5,9 @@ import 'package:xml/xml.dart';
 import 'models.dart';
 
 class MediaFetcher {
-  static const ytdlpBin = '/usr/local/bin/yt-dlp';
+  static String get _dir => File(Platform.resolvedExecutable).parent.path;
+  static String get ytdlpBin => Platform.isWindows ? "$_dir\\tools\\yt-dlp.exe" : "/usr/local/bin/yt-dlp";
+  static String get mpvBin => Platform.isWindows ? "$_dir\\tools\\mpv.exe" : "mpv";
   static const ytBase = 'https://youtube.com';
   static const imgBase = 'https://i.yt' 'img.com';
 
@@ -111,7 +113,7 @@ class MediaFetcher {
                 '--no-warnings',
         targetUrl,
       ],
-      environment: {'PATH': '/usr/local/bin:/usr/bin:/bin', 'LANG': 'C.UTF-8'},
+      environment: Platform.isWindows ? null : {'PATH': '/usr/local/bin:/usr/bin:/bin', 'LANG': 'C.UTF-8'},
     );
     final out = res.stdout.toString();
     print('YT_EXIT: ' + res.exitCode.toString() + ' LEN: ' + out.length.toString());
@@ -191,7 +193,7 @@ class MediaFetcher {
         '--no-warnings',
         watchUrl,
       ],
-      environment: {'PATH': '/usr/local/bin:/usr/bin:/bin', 'LANG': 'C.UTF-8'},
+      environment: Platform.isWindows ? null : {'PATH': '/usr/local/bin:/usr/bin:/bin', 'LANG': 'C.UTF-8'},
     );
     if (res.exitCode != 0) {
       throw Exception('Помилка аудіопотоку: ' + res.stderr.toString());
@@ -210,8 +212,8 @@ class MediaFetcher {
       if (startSec > 5) '--start=+' + startSec.toString(),
       url,
     ];
-    final escConf = File('/tmp/zen_mpv_esc.conf')..writeAsStringSync('ESC quit\nSPACE cycle pause\nLEFT seek -10\nRIGHT seek 10\n');
-    await Process.start('mpv', ['--input-conf=' + escConf.path, ...args], mode: ProcessStartMode.detached);
+    final escConf = File(Directory.systemTemp.path + Platform.pathSeparator + "zen_mpv_esc.conf")..writeAsStringSync('ESC quit\nSPACE cycle pause\nLEFT seek -10\nRIGHT seek 10\n');
+    await Process.start(mpvBin, ['--input-conf=' + escConf.path, ...args], mode: ProcessStartMode.detached);
   }
 }
 
