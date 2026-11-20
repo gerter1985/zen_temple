@@ -94,3 +94,84 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           files: ZenTemple_Linux_amd64.deb
+
+  build-om-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: om_mantra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Build OM Windows
+        run: flutter build windows --release
+      - name: Package OM_Setup.exe
+        shell: pwsh
+        run: |
+          $out = "build\windows\x64\runner\Release"
+          New-Item -ItemType Directory -Force -Path "$out\tools" | Out-Null
+          Copy-Item "C:\Windows\System32\vcruntime140*.dll" "$out\" -ErrorAction SilentlyContinue
+          Copy-Item "C:\Windows\System32\msvcp140*.dll" "$out\" -ErrorAction SilentlyContinue
+          $gh = "https://" + "github.com"
+          Invoke-WebRequest -Uri "$gh/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$out\tools\yt-dlp.exe"
+          $iss = @"
+          [Setup]
+          AppName=OM Mantra
+          AppPublisher=Yevhen Herter
+          AppVersion=1.0.3
+          DefaultDirName={localappdata}\Programs\OM_Mantra
+          DefaultGroupName=OM Mantra
+          OutputDir=.
+          OutputBaseFilename=OM_Setup
+          SetupIconFile=windows\runner\resources\app_icon.ico
+          Compression=lzma2
+          SolidCompression=yes
+          PrivilegesRequired=lowest
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{userdesktop}\OM Mantra"; Filename: "{app}\om_mantra.exe"; WorkingDir: "{app}"
+          Name: "{userprograms}\OM Mantra"; Filename: "{app}\om_mantra.exe"; WorkingDir: "{app}"
+
+          [Run]
+          Filename: "{app}\om_mantra.exe"; Description: "Launch OM"; Flags: nowait postinstall skipifsilent
+          "@
+          [System.IO.File]::WriteAllText("installer.iss", $iss, [System.Text.UTF8Encoding]::new($true))
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+      - name: Release OM_Setup.exe
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          files: om_mantra/OM_Setup.exe
+
+  build-om-linux:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: om_mantra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Build OM Linux .deb
+        run: |
+          sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libmpv-dev mpv
+          flutter build linux --release
+          mkdir -p pkg/usr/local/bin/om_mantra_app pkg/usr/share/applications pkg/usr/share/icons/hicolor/256x256/apps pkg/DEBIAN
+          cp -r build/linux/x64/release/bundle/* pkg/usr/local/bin/om_mantra_app/
+          cp assets/om_icon.png pkg/usr/share/icons/hicolor/256x256/apps/om_mantra.png
+          printf '#!/bin/sh\nexec /usr/local/bin/om_mantra_app/om_mantra "$@"\n' > pkg/usr/local/bin/om_mantra
+          chmod +x pkg/usr/local/bin/om_mantra
+          printf '[Desktop Entry]\nName=ОМ • Мантра Медитація\nComment=Автор проєкту: Євген Гертер\nExec=/usr/local/bin/om_mantra\nIcon=om_mantra\nType=Application\nCategories=AudioVideo;Education;\n' > pkg/usr/share/applications/om_mantra.desktop
+          printf 'Package: om-mantra\nVersion: 1.0.3\nSection: utils\nPriority: optional\nArchitecture: amd64\nDepends: mpv, yt-dlp, libgtk-3-0\nMaintainer: Yevhen Herter\nDescription: OM Mantra Meditation by Yevhen Herter\n' > pkg/DEBIAN/control
+          dpkg-deb --build pkg OM_Linux_amd64.deb
+      - name: Release OM_Linux_amd64.deb
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          files: om_mantra/OM_Linux_amd64.deb
