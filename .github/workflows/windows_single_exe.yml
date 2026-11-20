@@ -26,19 +26,34 @@ jobs:
           $mpvDir = (Get-Command mpv.exe).Source | Split-Path
           Copy-Item "$mpvDir\mpv.exe" "$out\tools\mpv.exe"
           Copy-Item "$mpvDir\*.dll" "$out\tools\" -ErrorAction SilentlyContinue
-      - name: Pack into Single Portable EXE with Icon
+      - name: Build Windows Installer
         shell: pwsh
         run: |
-          $out = "build\windows\x64\runner\Release"
-          $gh = "https://" + "github.com"
-          7z a -mx=5 app.7z "$out\*"
-          Copy-Item "C:\Program Files\7-Zip\7z.sfx" "7zSD.sfx"
-          Invoke-WebRequest -Uri "$gh/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe" -OutFile "rcedit.exe"
-          .\rcedit.exe "7zSD.sfx" --set-icon "windows\runner\resources\app_icon.ico"
-          $cfg = ';!@Install@!UTF-8!' + "`r`n" + 'RunProgram="zen_temple.exe"' + "`r`n" + 'GUIMode="2"' + "`r`n" + ';!@InstallEnd@!' + "`r`n"
-          [System.IO.File]::WriteAllText("config.txt", $cfg, [System.Text.UTF8Encoding]::new($false))
-          cmd /c copy /b 7zSD.sfx + config.txt + app.7z ZenTemple.exe
+          $iss = @"
+          [Setup]
+          AppName=ZenTemple
+          AppVersion=1.0.0
+          DefaultDirName={autopf}\ZenTemple
+          DefaultGroupName=ZenTemple
+          OutputDir=.
+          OutputBaseFilename=ZenTemple_Setup
+          SetupIconFile=windows\runner\resources\app_icon.ico
+          Compression=lzma2
+          SolidCompression=yes
+          PrivilegesRequired=lowest
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          [Icons]
+          Name: "{group}\ZenTemple"; Filename: "{app}\zen_temple.exe"
+          Name: "{autodesktop}\ZenTemple"; Filename: "{app}\zen_temple.exe"
+
+          [Run]
+          Filename: "{app}\zen_temple.exe"; Description: "Launch ZenTemple"; Flags: nowait postinstall skipifsilent
+          "@
+          [System.IO.File]::WriteAllText("installer.iss", $iss, [System.Text.UTF8Encoding]::new($true))
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
       - uses: actions/upload-artifact@v4
         with:
-          name: ZenTemple-Windows-Single-EXE
-          path: ZenTemple.exe
+          name: ZenTemple-Windows-Installer
+          path: ZenTemple_Setup.exe
