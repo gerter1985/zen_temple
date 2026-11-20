@@ -1,0 +1,44 @@
+name: Build Single EXE for Windows
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Build Windows Release
+        run: flutter build windows --release
+      - name: Bundle tools and books
+        shell: pwsh
+        run: |
+          $out = "build\windows\x64\runner\Release"
+          New-Item -ItemType Directory -Force -Path "$out\tools", "$out\books" | Out-Null
+          if (Test-Path "books_bundle") { Copy-Item "books_bundle\*.epub" "$out\books\" -ErrorAction SilentlyContinue }
+          $gh = "https://" + "github.com"
+          Invoke-WebRequest -Uri "$gh/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$out\tools\yt-dlp.exe"
+          Invoke-WebRequest -Uri "$gh/shinchiro/mpv-winbuild-cmake/releases/download/20250105/mpv-x86_64-20250105-git-3b30b27.7z" -OutFile "mpv.7z"
+          7z x mpv.7z -o"mpv_tmp" -y | Out-Null
+          Copy-Item "mpv_tmp\mpv.exe" "$out\tools\mpv.exe"
+          Copy-Item "mpv_tmp\*.dll" "$out\tools\" -ErrorAction SilentlyContinue
+      - name: Pack into Single Portable EXE with Icon
+        shell: pwsh
+        run: |
+          $out = "build\windows\x64\runner\Release"
+          $gh = "https://" + "github.com"
+          7z a -mx=5 app.7z "$out\*"
+          Invoke-WebRequest -Uri "$gh/chrislake/7zsfx/releases/download/1.7.0.3900/7zSD_All_x64.sfx" -OutFile "7zSD.sfx"
+          Invoke-WebRequest -Uri "$gh/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe" -OutFile "rcedit.exe"
+          .\rcedit.exe "7zSD.sfx" --set-icon "windows\runner\resources\app_icon.ico"
+          $cfg = ';!@Install@!UTF-8!' + "`r`n" + 'RunProgram="zen_temple.exe"' + "`r`n" + 'GUIMode="2"' + "`r`n" + ';!@InstallEnd@!' + "`r`n"
+          [System.IO.File]::WriteAllText("config.txt", $cfg, [System.Text.UTF8Encoding]::new($false))
+          cmd /c copy /b 7zSD.sfx + config.txt + app.7z ZenTemple.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZenTemple-Windows-Single-EXE
+          path: ZenTemple.exe

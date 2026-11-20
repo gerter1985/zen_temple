@@ -1,0 +1,29 @@
+stages:
+  - build
+
+build_windows_exe:
+  stage: build
+  tags:
+    - saas-windows-medium-amd64
+  script:
+    - choco install flutter 7zip -y
+    - refreshenv
+    - flutter build windows --release
+    - $out = "build\\windows\\x64\\runner\\Release"
+    - New-Item -ItemType Directory -Force -Path "$out\\tools", "$out\\books" | Out-Null
+    - if (Test-Path "books_bundle") { Copy-Item "books_bundle\\*.epub" "$out\\books\\" -ErrorAction SilentlyContinue }
+    - Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$out\\tools\\yt-dlp.exe"
+    - Invoke-WebRequest -Uri "https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20250105/mpv-x86_64-20250105-git-3b30b27.7z" -OutFile "mpv.7z"
+    - 7z x mpv.7z -o"mpv_tmp" -y | Out-Null
+    - Copy-Item "mpv_tmp\\mpv.exe" "$out\\tools\\mpv.exe"
+    - Copy-Item "mpv_tmp\\*.dll" "$out\\tools\\" -ErrorAction SilentlyContinue
+    - 7z a -mx=5 app.7z "$out\\*"
+    - Invoke-WebRequest -Uri "https://github.com/chrislake/7zsfx/releases/download/1.7.0.3900/7zSD_All_x64.sfx" -OutFile "7zSD.sfx"
+    - Invoke-WebRequest -Uri "https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe" -OutFile "rcedit.exe"
+    - .\\rcedit.exe "7zSD.sfx" --set-icon "windows\\runner\\resources\\app_icon.ico"
+    - $cfg = ";!@Install@!UTF-8!`r`nRunProgram=`"zen_temple.exe`"`r`nGUIMode=`"2`"`r`n;!@InstallEnd@!`r`n"
+    - "[System.IO.File]::WriteAllText('config.txt', $cfg, [System.Text.UTF8Encoding]::new($false))"
+    - cmd /c copy /b 7zSD.sfx + config.txt + app.7z ZenTemple.exe
+  artifacts:
+    paths:
+      - ZenTemple.exe
