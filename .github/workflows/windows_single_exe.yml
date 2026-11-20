@@ -59,3 +59,9 @@ jobs:
         with:
           name: ZenTemple-Windows-Installer
           path: ZenTemple_Setup.exe
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: ZenTemple v1.0.${{ github.run_number }}
+          files: ZenTemple_Setup.exe
