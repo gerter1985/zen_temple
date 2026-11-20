@@ -22,7 +22,9 @@ jobs:
           if (Test-Path "books_bundle") { Copy-Item "books_bundle\*.epub" "$out\books\" -ErrorAction SilentlyContinue }
           $gh = "https://" + "github.com"
           Invoke-WebRequest -Uri "$gh/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$out\tools\yt-dlp.exe"
-          Invoke-WebRequest -Uri "$gh/shinchiro/mpv-winbuild-cmake/releases/download/20250105/mpv-x86_64-20250105-git-3b30b27.7z" -OutFile "mpv.7z"
+          $rel = Invoke-RestMethod -Uri "https://github.com"
+          $mpvUrl = ($rel.assets | Where-Object { $_.name -match "^mpv-x86_64-\d+-git-.*\.7z$" } | Select-Object -First 1).browser_download_url
+          Invoke-WebRequest -Uri $mpvUrl -OutFile "mpv.7z"
           7z x mpv.7z -o"mpv_tmp" -y | Out-Null
           Copy-Item "mpv_tmp\mpv.exe" "$out\tools\mpv.exe"
           Copy-Item "mpv_tmp\*.dll" "$out\tools\" -ErrorAction SilentlyContinue
