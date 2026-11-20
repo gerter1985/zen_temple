@@ -14,12 +14,14 @@ jobs:
           channel: 'stable'
       - name: Build Windows Release
         run: flutter build windows --release
-      - name: Bundle tools and books
+      - name: Bundle tools, books and VC++ runtime
         shell: pwsh
         run: |
           $out = "build\windows\x64\runner\Release"
           New-Item -ItemType Directory -Force -Path "$out\tools", "$out\books" | Out-Null
           if (Test-Path "books_bundle") { Copy-Item "books_bundle\*.epub" "$out\books\" -ErrorAction SilentlyContinue }
+          Copy-Item "C:\Windows\System32\vcruntime140*.dll" "$out\" -ErrorAction SilentlyContinue
+          Copy-Item "C:\Windows\System32\msvcp140*.dll" "$out\" -ErrorAction SilentlyContinue
           $gh = "https://" + "github.com"
           Invoke-WebRequest -Uri "$gh/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$out\tools\yt-dlp.exe"
           choco install mpvio -y --no-progress
@@ -33,7 +35,7 @@ jobs:
           [Setup]
           AppName=ZenTemple
           AppVersion=1.0.0
-          DefaultDirName={autopf}\ZenTemple
+          DefaultDirName={localappdata}\Programs\ZenTemple
           DefaultGroupName=ZenTemple
           OutputDir=.
           OutputBaseFilename=ZenTemple_Setup
@@ -44,10 +46,10 @@ jobs:
 
           [Files]
           Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-          [Icons]
-          Name: "{group}\ZenTemple"; Filename: "{app}\zen_temple.exe"
-          Name: "{autodesktop}\ZenTemple"; Filename: "{app}\zen_temple.exe"
 
+          [Icons]
+          Name: "{userdesktop}\ZenTemple"; Filename: "{app}\zen_temple.exe"; WorkingDir: "{app}"
+          Name: "{userprograms}\ZenTemple"; Filename: "{app}\zen_temple.exe"; WorkingDir: "{app}"
           [Run]
           Filename: "{app}\zen_temple.exe"; Description: "Launch ZenTemple"; Flags: nowait postinstall skipifsilent
           "@
