@@ -31,13 +31,8 @@ jobs:
           $mpvDir = (Get-Command mpv.exe).Source | Split-Path
           Copy-Item "$mpvDir\mpv.exe" "$out\mpv.exe"
           Copy-Item "$mpvDir\*.dll" "$out\" -ErrorAction SilentlyContinue
-          $wc = [System.Net.WebClient]::new()
-          $wc.DownloadFile("https://python.org" + "python/3.11.9/python-3.11.9-embed-amd64.zip", "$PWD\py.zip")
-          Add-Type -AssemblyName System.IO.Compression.FileSystem
-          [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD\py.zip", "$PWD\$out\python")
-          Add-Content "$out\python\python311._pth" "`nimport site"
-          $wc.DownloadFile("https://pypa.io", "$PWD\get-pip.py")
-          & "$out\python\python.exe" get-pip.py --no-warn-script-location
+          choco install python311 -y --no-progress
+          Copy-Item "C:\Python311" "$out\python" -Recurse -Force
           & "$out\python\python.exe" -m pip install edge-tts vosk sounddevice --no-warn-script-location
       - name: Build Windows Installer
         shell: pwsh
