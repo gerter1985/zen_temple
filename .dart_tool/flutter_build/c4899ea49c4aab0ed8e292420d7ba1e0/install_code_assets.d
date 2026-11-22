@@ -1,0 +1,1 @@
+ /home/evgen/tarot_flutter/.dart_tool/flutter_build/c4899ea49c4aab0ed8e292420d7ba1e0/native_assets.json /home/evgen/tarot_flutter/build/native_assets/linux/libcnativeapi.so:  /home/evgen/tarot_flutter/.dart_tool/hooks_runner/shared/cnativeapi/build/c3dea15f32/libcnativeapi.so

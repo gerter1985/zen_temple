@@ -1,0 +1,43 @@
+name: Build Windows Setup EXE
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: 'stable' }
+      - run: flutter build windows --release
+      - name: Bundle VC++ DLLs, MPV & YT-DLP
+        shell: pwsh
+        run: |
+          $out = "build/windows/x64/runner/Release"
+          Copy-Item "C:/Windows/System32/vcruntime140*.dll" $out -Force
+          Copy-Item "C:/Windows/System32/msvcp140*.dll" $out -Force
+          Copy-Item "C:/Windows/System32/concrt140.dll" $out -Force -ErrorAction SilentlyContinue
+          Copy-Item voice_stt.py, voice_tts.py, voice_rec.py $out
+          Copy-Item -Recurse model_uk "$out/model_uk"
+          Invoke-WebRequest "https://github.com" -OutFile "$out/yt-dlp.exe"
+          choco install mpv.portable -y
+          Copy-Item "C:/ProgramData/chocolatey/lib/mpv.portable/tools/*.exe" $out -Force
+      - name: Bundle Python & Compile Setup EXE
+        shell: pwsh
+        run: |
+          $out = "build/windows/x64/runner/Release"
+          New-Item -ItemType Directory -Path "$out/python" -Force
+          Invoke-WebRequest "https://python.org" -OutFile "py.zip"
+          Expand-Archive "py.zip" -DestinationPath "$out/python" -Force
+          Add-Content "$out/python/python311._pth" "`nimport site"
+          Invoke-WebRequest "https://pypa.io" -OutFile "get-pip.py"
+          & "$out/python/python.exe" get-pip.py --no-warn-script-location
+          & "$out/python/python.exe" -m pip install edge-tts vosk sounddevice --no-warn-script-location
+          iscc installer.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TarotSchool-Setup-EXE
+          path: TarotSchool_Setup.exe
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: tarot-v1.0.0
+          name: Таро Простір • Школа Майстра v1.0.0 (Windows Setup)
+          files: TarotSchool_Setup.exe

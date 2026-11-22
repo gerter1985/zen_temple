@@ -1,0 +1,12 @@
+{
+  "assets": {},
+  "config": {
+    "build_asset_types": [],
+    "linking_enabled": false
+  },
+  "out_dir_shared": "/home/evgen/tarot_flutter/.dart_tool/hooks_runner/shared/cnativeapi/build/",
+  "out_file": "/home/evgen/tarot_flutter/.dart_tool/hooks_runner/cnativeapi/337ce265dc/output.json",
+  "package_name": "cnativeapi",
+  "package_root": "/home/evgen/.pub-cache/hosted/pub.dev/cnativeapi-0.6.2/",
+  "user_defines": {}
+}
