@@ -19,14 +19,14 @@ jobs:
           Copy-Item -Recurse model_uk "$out/model_uk"
           Invoke-WebRequest "https://github.com" -OutFile "$out/yt-dlp.exe"
           choco install mpv.portable -y
-          Copy-Item "C:/ProgramData/chocolatey/lib/mpvio.portable/tools/*" $out -Force
+          Copy-Item "C:/ProgramData/chocolatey/lib/mpvio.portable/tools/*" $out -Recurse -Force
       - name: Bundle Python & Compile Setup EXE
         shell: pwsh
         run: |
           $out = "build/windows/x64/runner/Release"
           New-Item -ItemType Directory -Path "$out/python" -Force
           Invoke-WebRequest "https://python.org" -OutFile "py.zip"
-          Expand-Archive "py.zip" -DestinationPath "$out/python" -Force
+          7z x py.zip -o"$out/python" -y
           Add-Content "$out/python/python311._pth" "`nimport site"
           Invoke-WebRequest "https://pypa.io" -OutFile "get-pip.py"
           & "$out/python/python.exe" get-pip.py --no-warn-script-location
