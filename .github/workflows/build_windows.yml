@@ -26,7 +26,7 @@ jobs:
           $out = "build/windows/x64/runner/Release"
           New-Item -ItemType Directory -Path "$out/python" -Force
           Invoke-WebRequest "https://python.org" -OutFile "py.zip"
-          7z x py.zip -o"$out/python" -y
+          tar -xf py.zip -C "$out/python"
           Add-Content "$out/python/python311._pth" "`nimport site"
           Invoke-WebRequest "https://pypa.io" -OutFile "get-pip.py"
           & "$out/python/python.exe" get-pip.py --no-warn-script-location
