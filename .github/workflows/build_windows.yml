@@ -7,8 +7,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with: { channel: 'stable' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
       - run: flutter build windows --release
-      - name: Bundle VC++ DLLs, MPV & YT-DLP
+      - name: Bundle Autonomous Python, MPV, YT-DLP & VC++ DLLs
         shell: pwsh
         run: |
           $out = "build/windows/x64/runner/Release"
@@ -17,20 +19,12 @@ jobs:
           Copy-Item "C:/Windows/System32/concrt140.dll" $out -Force -ErrorAction SilentlyContinue
           Copy-Item voice_stt.py, voice_tts.py, voice_rec.py $out
           Copy-Item -Recurse model_uk "$out/model_uk"
-          Invoke-WebRequest "https://github.com" -OutFile "$out/yt-dlp.exe"
+          curl.exe -fL "https://github.com" -o "$out/yt-dlp.exe"
           choco install mpv.portable -y
           Copy-Item "C:/ProgramData/chocolatey/lib/mpvio.portable/tools/*" $out -Recurse -Force
-      - name: Bundle Python & Compile Setup EXE
-        shell: pwsh
-        run: |
-          $out = "build/windows/x64/runner/Release"
-          New-Item -ItemType Directory -Path "$out/python" -Force
-          Invoke-WebRequest "https://python.org" -OutFile "py.zip"
-          tar -xf py.zip -C "$out/python"
-          Add-Content "$out/python/python311._pth" "`nimport site"
-          Invoke-WebRequest "https://pypa.io" -OutFile "get-pip.py"
-          & "$out/python/python.exe" get-pip.py --no-warn-script-location
-          & "$out/python/python.exe" -m pip install edge-tts vosk sounddevice --no-warn-script-location
+          python -m pip install edge-tts vosk sounddevice --no-warn-script-location
+          $pyDir = (Get-Command python).Source | Split-Path
+          Copy-Item "$pyDir" "$out/python" -Recurse -Force
           iscc installer.iss
       - uses: actions/upload-artifact@v4
         with:
