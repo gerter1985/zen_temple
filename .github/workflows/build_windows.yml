@@ -12,6 +12,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -31,8 +34,7 @@ jobs:
           $mpvDir = (Get-Command mpv.exe).Source | Split-Path
           Copy-Item "$mpvDir\mpv.exe" "$out\mpv.exe"
           Copy-Item "$mpvDir\*.dll" "$out\" -ErrorAction SilentlyContinue
-          choco install python311 -y --no-progress
-          Copy-Item "C:\Python311" "$out\python" -Recurse -Force
+          Copy-Item "$env:pythonLocation" "$out\python" -Recurse -Force
           & "$out\python\python.exe" -m pip install edge-tts vosk sounddevice --no-warn-script-location
       - name: Build Windows Installer
         shell: pwsh
