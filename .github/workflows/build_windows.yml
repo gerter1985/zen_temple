@@ -19,7 +19,7 @@ jobs:
           Copy-Item -Recurse model_uk "$out/model_uk"
           Invoke-WebRequest "https://github.com" -OutFile "$out/yt-dlp.exe"
           choco install mpv.portable -y
-          Copy-Item "C:/ProgramData/chocolatey/lib/mpv.portable/tools/*.exe" $out -Force
+          Copy-Item "C:/ProgramData/chocolatey/lib/mpvio.portable/tools/*" $out -Force
       - name: Bundle Python & Compile Setup EXE
         shell: pwsh
         run: |
