@@ -1,37 +1,76 @@
-name: Build Windows Setup EXE
-on: [push, workflow_dispatch]
+name: Build TarotSchool Windows Setup
+on:
+  workflow_dispatch:
+  push:
+    branches: [ tarot-school ]
+
+permissions:
+  contents: write
+
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
-        with: { channel: 'stable' }
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
-      - run: flutter build windows --release
-      - name: Bundle Autonomous Python, MPV, YT-DLP & VC++ DLLs
+        with:
+          channel: 'stable'
+      - name: Build Windows Release
+        run: flutter build windows --release
+      - name: Bundle VC++, MPV, YT-DLP & Python
         shell: pwsh
         run: |
-          $out = "build/windows/x64/runner/Release"
-          Copy-Item "C:/Windows/System32/vcruntime140*.dll" $out -Force
-          Copy-Item "C:/Windows/System32/msvcp140*.dll" $out -Force
-          Copy-Item "C:/Windows/System32/concrt140.dll" $out -Force -ErrorAction SilentlyContinue
-          Copy-Item voice_stt.py, voice_tts.py, voice_rec.py $out
-          Copy-Item -Recurse model_uk "$out/model_uk"
-          curl.exe -fL "https://github.com" -o "$out/yt-dlp.exe"
-          choco install mpv.portable -y
-          Copy-Item "C:/ProgramData/chocolatey/lib/mpvio.portable/tools/*" $out -Recurse -Force
-          python -m pip install edge-tts vosk sounddevice --no-warn-script-location
-          $pyDir = (Get-Command python).Source | Split-Path
-          Copy-Item "$pyDir" "$out/python" -Recurse -Force
-          iscc installer.iss
-      - uses: actions/upload-artifact@v4
+          $out = "build\windows\x64\runner\Release"
+          Copy-Item "C:\Windows\System32\vcruntime140*.dll" "$out\" -ErrorAction SilentlyContinue
+          Copy-Item "C:\Windows\System32\msvcp140*.dll" "$out\" -ErrorAction SilentlyContinue
+          Copy-Item voice_stt.py, voice_tts.py, voice_rec.py "$out\"
+          Copy-Item -Recurse model_uk "$out\model_uk"
+          $gh = "https://" + "github.com"
+          Invoke-WebRequest -Uri "$gh/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$out\yt-dlp.exe"
+          choco install mpvio -y --no-progress
+          $mpvDir = (Get-Command mpv.exe).Source | Split-Path
+          Copy-Item "$mpvDir\mpv.exe" "$out\mpv.exe"
+          Copy-Item "$mpvDir\*.dll" "$out\" -ErrorAction SilentlyContinue
+          $wc = [System.Net.WebClient]::new()
+          $wc.DownloadFile("https://python.org", "$PWD\py.zip")
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD\py.zip", "$PWD\$out\python")
+          Add-Content "$out\python\python311._pth" "`nimport site"
+          $wc.DownloadFile("https://pypa.io", "$PWD\get-pip.py")
+          & "$out\python\python.exe" get-pip.py --no-warn-script-location
+          & "$out\python\python.exe" -m pip install edge-tts vosk sounddevice --no-warn-script-location
+      - name: Build Windows Installer
+        shell: pwsh
+        run: |
+          $iss = @"
+          [Setup]
+          AppName=TarotSchool
+          AppPublisher=Yevhen Herter
+          AppVersion=1.0.0
+          DefaultDirName={localappdata}\Programs\TarotSchool
+          DefaultGroupName=TarotSchool
+          OutputDir=.
+          OutputBaseFilename=TarotSchool_Setup
+          SetupIconFile=windows\runner\resources\app_icon.ico
+          Compression=lzma2
+          SolidCompression=yes
+          PrivilegesRequired=lowest
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{userdesktop}\Таро Простір"; Filename: "{app}\tarot_flutter.exe"; WorkingDir: "{app}"
+          Name: "{userprograms}\Таро Простір"; Filename: "{app}\tarot_flutter.exe"; WorkingDir: "{app}"
+
+          [Run]
+          Filename: "{app}\tarot_flutter.exe"; Description: "Launch TarotSchool"; Flags: nowait postinstall skipifsilent
+          "@
+          [System.IO.File]::WriteAllText("installer.iss", $iss, [System.Text.UTF8Encoding]::new($true))
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: TarotSchool-Setup-EXE
-          path: TarotSchool_Setup.exe
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: tarot-v1.0.0
-          name: Таро Простір • Школа Майстра v1.0.0 (Windows Setup)
+          tag_name: tarot-v1.0.${{ github.run_number }}
+          name: TarotSchool v1.0.${{ github.run_number }}
           files: TarotSchool_Setup.exe
