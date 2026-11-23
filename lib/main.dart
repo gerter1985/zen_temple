@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
@@ -8,7 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'yt_service.dart';
 
-void main() { WidgetsFlutterBinding.ensureInitialized(); try { Directory.current = File(Platform.resolvedExecutable).parent; MediaKit.ensureInitialized(); } catch (_) {} runApp(const TarotApp()); }
+void main() async { WidgetsFlutterBinding.ensureInitialized(); try { Directory.current = File(Platform.resolvedExecutable).parent; MediaKit.ensureInitialized();  } catch (_) {} runApp(const TarotApp()); }
 class AppThemeData { final String name; final List<Color> bg; final Color panel, accent; const AppThemeData(this.name, this.bg, this.panel, this.accent); }
 const kThemes = [
   AppThemeData('Північне сяйво', [Color(0xFF040D1A), Color(0xFF072622), Color(0xFF160A2C)], Color(0xCC091C24), Color(0xFF34D399)),
@@ -96,7 +97,7 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(body: Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: th.bg)), child: Column(children: [
       Container(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), color: th.panel, child: Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
         Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.auto_awesome, color: th.accent, size: 24), const SizedBox(width: 10), const Text('ТАРО ПРОСТІР • ШКОЛА МАЙСТРА', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
-        Wrap(spacing: 8, children: [_pill(th, bgOn ? '🔊 Фон: Увімкнено' : '🔇 Фон: Вимкнено', bgOn, _toggleBg), ...List.generate(kThemes.length, (i) => _pill(th, kThemes[i].name, widget.tIdx == i, () => widget.onT(i))), _pill(th, "❐", false, () => Process.run("wmctrl", ["-r", ":ACTIVE:", "-b", "toggle,fullscreen"]), h: 12), _pill(th, "✕", false, () => exit(0), h: 12)]),
+        Wrap(spacing: 8, children: [_pill(th, bgOn ? '🔊 Фон: Увімкнено' : '🔇 Фон: Вимкнено', bgOn, _toggleBg), ...List.generate(kThemes.length, (i) => _pill(th, kThemes[i].name, widget.tIdx == i, () => widget.onT(i))), _pill(th, "❐", false, () => () { if (Platform.isLinux) { Process.run("wmctrl", ["-r", ":ACTIVE:", "-b", "toggle,fullscreen"]); } else if (Platform.isWindows) { final u32 = DynamicLibrary.open("user32.dll"); final kb = u32.lookupFunction<Void Function(Uint8, Uint8, Uint32, IntPtr), void Function(int, int, int, int)>("keybd_event"); kb(0x7A, 0, 0, 0); kb(0x7A, 0, 2, 0); } }(), h: 12), _pill(th, "✕", false, () => exit(0), h: 12)]),
       ])),
       Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10), color: Colors.black38, child: Wrap(spacing: 10, runSpacing: 8, children: List.generate(tabs.length, (i) => _pill(th, tabs[i], tab == i, () => setState(() => tab = i), h: 18, v: 10, fs: 19)))),
       Expanded(child: Padding(padding: const EdgeInsets.all(20), child: _body(th))),
