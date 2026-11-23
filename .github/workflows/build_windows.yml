@@ -1,0 +1,73 @@
+name: Build RunesSchool Windows Setup
+on:
+  workflow_dispatch:
+  push:
+    branches: [ runes-school ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Build Windows Release
+        run: flutter build windows --release
+      - name: Bundle VC++, MPV, YT-DLP & Python
+        shell: pwsh
+        run: |
+          $out = "build\windows\x64\runner\Release"
+          Copy-Item "C:\Windows\System32\vcruntime140*.dll" "$out\" -ErrorAction SilentlyContinue
+          Copy-Item "C:\Windows\System32\msvcp140*.dll" "$out\" -ErrorAction SilentlyContinue
+          Copy-Item voice_stt.py, voice_tts.py, voice_rec.py "$out\"
+          Copy-Item -Recurse model_uk "$out\model_uk"
+          $gh = "https://" + "github.com"
+          Invoke-WebRequest -Uri "$gh/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$out\yt-dlp.exe"
+          choco install mpvio -y --no-progress
+          $mpvDir = (Get-Command mpv.exe).Source | Split-Path
+          Copy-Item "$mpvDir\mpv.exe" "$out\mpv.exe"
+          Copy-Item "$mpvDir\*.dll" "$out\" -ErrorAction SilentlyContinue
+          Copy-Item "$env:pythonLocation" "$out\python" -Recurse -Force
+          & "$out\python\python.exe" -m pip install edge-tts vosk sounddevice --no-warn-script-location
+      - name: Build Windows Installer
+        shell: pwsh
+        run: |
+          $iss = @"
+          [Setup]
+          AppName=RunesSchool
+          AppPublisher=Yevhen Herter
+          AppVersion=1.0.0
+          DefaultDirName={localappdata}\Programs\RunesSchool
+          DefaultGroupName=RunesSchool
+          OutputDir=.
+          OutputBaseFilename=RunesSchool_Setup
+          SetupIconFile=windows\runner\resources\app_icon.ico
+          Compression=lzma2
+          SolidCompression=yes
+          PrivilegesRequired=lowest
+
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{userdesktop}\Руни Простір"; Filename: "{app}\runes_flutter.exe"; WorkingDir: "{app}"
+          Name: "{userprograms}\Руни Простір"; Filename: "{app}\runes_flutter.exe"; WorkingDir: "{app}"
+
+          [Run]
+          Filename: "{app}\runes_flutter.exe"; Description: "Launch RunesSchool"; Flags: nowait postinstall skipifsilent
+          "@
+          [System.IO.File]::WriteAllText("installer.iss", $iss, [System.Text.UTF8Encoding]::new($true))
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: runes-v1.0.${{ github.run_number }}
+          name: RunesSchool v1.0.${{ github.run_number }}
+          files: RunesSchool_Setup.exe
