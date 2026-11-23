@@ -17,5 +17,4 @@ flutter:
   assets:
     - assets/cards/
     - assets/covers/
-    - assets/music/
     - assets/data/tarot.json
