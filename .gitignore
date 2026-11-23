@@ -1,0 +1,9 @@
+build/
+.dart_tool/
+*.deb
+deb_pkg/
+*.js
+*.py
+!voice_stt.py
+!voice_tts.py
+!voice_rec.py
