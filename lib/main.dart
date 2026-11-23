@@ -1,4 +1,3 @@
-import 'package:window_manager/window_manager.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
@@ -9,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'yt_service.dart';
 
-void main() async { WidgetsFlutterBinding.ensureInitialized(); try { Directory.current = File(Platform.resolvedExecutable).parent; MediaKit.ensureInitialized(); await windowManager.ensureInitialized(); } catch (_) {} runApp(const TarotApp()); }
+void main() async { WidgetsFlutterBinding.ensureInitialized(); try { Directory.current = File(Platform.resolvedExecutable).parent; MediaKit.ensureInitialized();  } catch (_) {} runApp(const TarotApp()); }
 class AppThemeData { final String name; final List<Color> bg; final Color panel, accent; const AppThemeData(this.name, this.bg, this.panel, this.accent); }
 const kThemes = [
   AppThemeData('🌲 Смарагдовий ліс', [Color(0xFF0B1712), Color(0xFF13261E), Color(0xFF07100C)], Color(0xE613261E), Color(0xFFD4AF37)),
@@ -99,7 +98,7 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(body: Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: th.bg)), child: Column(children: [
       Container(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14), color: th.panel, child: Wrap(spacing: 12, runSpacing: 8, alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, children: [
         Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.auto_awesome, color: th.accent, size: 24), const SizedBox(width: 10), const Text('ТАРО ПРОСТІР • ШКОЛА МАЙСТРА', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))]),
-        Wrap(spacing: 8, children: [_pill(th, bgOn ? '🔊 Фон: Увімкнено' : '🔇 Фон: Вимкнено', bgOn, _toggleBg), ...List.generate(kThemes.length, (i) => _pill(th, kThemes[i].name, widget.tIdx == i, () => widget.onT(i))), _pill(th, "❐", false, () => () async { final f = await windowManager.isFullScreen(); await windowManager.setFullScreen(!f); }(), h: 12), _pill(th, "✕", false, () => exit(0), h: 12)]),
+        Wrap(spacing: 8, children: [_pill(th, bgOn ? '🔊 Фон: Увімкнено' : '🔇 Фон: Вимкнено', bgOn, _toggleBg), ...List.generate(kThemes.length, (i) => _pill(th, kThemes[i].name, widget.tIdx == i, () => widget.onT(i))), _pill(th, "❐", false, () => () { if (Platform.isLinux) Process.run("wmctrl", ["-r", ":ACTIVE:", "-b", "toggle,fullscreen"]); SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky); }(), h: 12), _pill(th, "✕", false, () => exit(0), h: 12)]),
       ])),
       Container(width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10), color: Colors.black38, child: Wrap(spacing: 10, runSpacing: 8, children: List.generate(tabs.length, (i) => _pill(th, tabs[i], tab == i, () => setState(() => tab = i), h: 18, v: 10, fs: 19)))),
       Expanded(child: Padding(padding: const EdgeInsets.all(20), child: _body(th))),
