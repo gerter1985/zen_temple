@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'yt_service.dart';
 
-void main() { WidgetsFlutterBinding.ensureInitialized(); MediaKit.ensureInitialized(); runApp(const TarotApp()); }
+void main() { WidgetsFlutterBinding.ensureInitialized(); try { Directory.current = File(Platform.resolvedExecutable).parent; MediaKit.ensureInitialized(); } catch (_) {} runApp(const TarotApp()); }
 class AppThemeData { final String name; final List<Color> bg; final Color panel, accent; const AppThemeData(this.name, this.bg, this.panel, this.accent); }
 const kThemes = [
   AppThemeData('Північне сяйво', [Color(0xFF040D1A), Color(0xFF072622), Color(0xFF160A2C)], Color(0xCC091C24), Color(0xFF34D399)),
