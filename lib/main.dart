@@ -1,6 +1,4 @@
 import 'package:window_manager/window_manager.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:window_manager/window_manager.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
